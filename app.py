@@ -1,28 +1,31 @@
 import streamlit as st
 import joblib
 
-st.write("🚀 App started")
+st.title("Fake News Detector")
 
-try:
+@st.cache_resource
+def load_model():
     vectorizer = joblib.load("vectorizer.jb")
     model = joblib.load("lr_model.jb")
-    st.write("✅ Model loaded successfully")
-except Exception as e:
-    st.error(f"❌ Model load error: {e}")
+    return vectorizer, model
 
-st.title("Fake News Detector")
+vectorizer, model = load_model()
 
 inputn = st.text_area("Enter News:")
 
 if st.button("Check"):
     if inputn:
-        try:
-            data = vectorizer.transform([inputn])
-            result = model.predict(data)
+        data = vectorizer.transform([inputn])
 
-            if result[0] == 1:
-                st.success("Real News")
-            else:
-                st.error("Fake News")
-        except Exception as e:
-            st.error(f"Prediction error: {e}")
+        # 🔥 use probability instead of direct predict
+        prob = model.predict_proba(data)[0]
+
+        real_prob = prob[1]
+        fake_prob = prob[0]
+
+        st.write(f"Confidence → Real: {real_prob:.2f}, Fake: {fake_prob:.2f}")
+
+        if real_prob > fake_prob:
+            st.success("Real News")
+        else:
+            st.error("Fake News")
